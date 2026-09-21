@@ -12,15 +12,15 @@ import java.net.URI;
 @RestController
 public class AdminThemeController {
 
-    private final ThemeDao themeDao;
+    private final ThemeService themeService;
 
-    public AdminThemeController(ThemeDao themeDao) {
-        this.themeDao = themeDao;
+    public AdminThemeController(ThemeService themeService) {
+        this.themeService = themeService;
     }
 
     @PostMapping("/admin/themes")
     public ResponseEntity<Theme> createTheme(@RequestBody Theme theme) {
-        Theme newTheme = themeDao.save(theme);
+        Theme newTheme = themeService.save(theme);
 
         return ResponseEntity
                 .created(URI.create("/admin/themes/" + newTheme.getId()))
@@ -29,7 +29,7 @@ public class AdminThemeController {
 
     @DeleteMapping("/admin/themes/{id}")
     public ResponseEntity<Void> deleteTheme(@PathVariable Long id) {
-        themeDao.deleteById(id);
+        themeService.deleteById(id);
 
         return ResponseEntity.noContent().build();
     }
