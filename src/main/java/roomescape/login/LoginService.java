@@ -1,7 +1,9 @@
 package roomescape.login;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import roomescape.member.Member;
 import roomescape.member.MemberDao;
@@ -34,15 +36,24 @@ public class LoginService {
     }
 
     public Member findMemberByToken(String token) {
-        Long memberId = Long.valueOf(Jwts.parserBuilder()
-                                         .setSigningKey(Keys.hmacShaKeyFor(
-                                                 "Yn2kjibddFAWtnPJ2AFlL8WXmohJMCvigQggaEypa5E=".getBytes()
-                                         ))
-                                         .build()
-                                         .parseClaimsJws(token)
-                                         .getBody()
-                                         .getSubject());
+        try {
+            Long memberId = Long.valueOf(
+                    Jwts.parserBuilder()
+                        .setSigningKey(Keys.hmacShaKeyFor(
+                                "Yn2kjibddFAWtnPJ2AFlL8WXmohJMCvigQggaEypa5E=".getBytes()
+                        ))
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody()
+                        .getSubject()
+            );
 
-        return memberDao.findById(memberId);
+            return memberDao.findById(memberId);
+
+        } catch (JwtException
+                 | NumberFormatException
+                 | EmptyResultDataAccessException e) {
+            throw new LoginAuthenticationException();
+        }
     }
 }

@@ -21,27 +21,28 @@ public class AdminInterceptor implements HandlerInterceptor {
             HttpServletRequest request,
             HttpServletResponse response,
             Object handler
-    ) throws Exception {
+    ) {
+        String token = extractTokenFromCookie(request.getCookies());
 
-        Cookie[] cookies = request.getCookies();
-        String token = extractTokenFromCookie(cookies);
-
-        Member member = null;
-
-        if (!token.isEmpty()) {
-            try {
-                member = loginService.findMemberByToken(token);
-            } catch (Exception e) {
-                member = null;
-            }
-        }
-
-        if (member == null || !member.getRole().equals("ADMIN")) {
+        if (token.isEmpty()) {
             response.setStatus(401);
             return false;
         }
 
-        return true;
+        try {
+            Member member = loginService.findMemberByToken(token);
+
+            if (!member.getRole().equals("ADMIN")) {
+                response.setStatus(401);
+                return false;
+            }
+
+            return true;
+
+        } catch (LoginAuthenticationException e) {
+            response.setStatus(401);
+            return false;
+        }
     }
 
     private String extractTokenFromCookie(Cookie[] cookies) {
