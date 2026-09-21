@@ -1,7 +1,5 @@
 package roomescape.login;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
@@ -11,15 +9,14 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import roomescape.member.Member;
-import roomescape.member.MemberDao;
 
 @Component
 public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolver {
 
-    private final MemberDao memberDao;
+    private final LoginService loginService;
 
-    public LoginMemberArgumentResolver(MemberDao memberDao) {
-        this.memberDao = memberDao;
+    public LoginMemberArgumentResolver(LoginService loginService) {
+        this.loginService = loginService;
     }
 
     @Override
@@ -37,21 +34,13 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
         HttpServletRequest request =
                 (HttpServletRequest) webRequest.getNativeRequest();
 
-        Cookie[] cookies = request.getCookies();
-        String token = extractTokenFromCookie(cookies);
+        String token = extractTokenFromCookie(request.getCookies());
 
-        Long memberId = Long.valueOf(
-                Jwts.parserBuilder()
-                    .setSigningKey(Keys.hmacShaKeyFor(
-                            "Yn2kjibddFAWtnPJ2AFlL8WXmohJMCvigQggaEypa5E=".getBytes()
-                    ))
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject()
-        );
+        if (token.isEmpty()) {
+            throw new LoginAuthenticationException();
+        }
 
-        Member member = memberDao.findById(memberId);
+        Member member = loginService.findMemberByToken(token);
 
         return new LoginMember(
                 member.getId(),
