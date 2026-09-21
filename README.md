@@ -3,6 +3,15 @@
 ## 클래스별 구현 기능 목록
 
 ---
+## `PasswordConfig`
+
+### 비밀번호 인코더 설정 기능
+
+* [x] `PasswordEncoder`를 Spring Bean으로 등록한다.
+* [x] 비밀번호 인코딩 방식으로 `BCryptPasswordEncoder`를 사용한다.
+* [x] `MemberService`와 `LoginService`에서 동일한 `PasswordEncoder`를 주입받아 사용할 수 있도록 구성한다.
+
+---
 
 ## `WebConfig`
 
@@ -88,13 +97,12 @@
 
 * [x] `HandlerMethodArgumentResolver`를 구현한다.
 * [x] 컨트롤러 메서드의 파라미터 타입이 `LoginMember`인 경우 Resolver가 동작하도록 구성한다.
-* [x] 컨트롤러 진입 전에 `HttpServletRequest`에서 Cookie 정보를 조회한다.
-* [x] Cookie에서 `token` 값을 추출한다.
-* [x] JWT의 `subject`에서 회원 식별자를 조회한다.
-* [x] JWT 서명 검증에 동일한 Secret Key를 사용한다.
-* [x] 추출한 회원 식별자를 이용해 `MemberDao.findById()`로 회원을 조회한다.
+* [x] `HttpServletRequest`의 Cookie에서 `token` 값을 추출한다.
+* [x] 인증 토큰이 존재하지 않는 경우 `LoginAuthenticationException`을 발생시킨다.
+* [x] JWT를 직접 해석하지 않고 `LoginService.findMemberByToken()`에 회원 조회를 위임한다.
 * [x] 조회한 `Member` 정보를 이용해 `LoginMember` 객체를 생성한다.
 * [x] 생성한 `LoginMember`를 컨트롤러 메서드의 인자로 전달한다.
+* [x] Resolver에서 `MemberDao`를 직접 사용하지 않도록 구성한다.
 
 ### Cookie 토큰 조회 기능
 
@@ -128,10 +136,12 @@
 
 ### 로그인 인증 기능
 
-* [x] 이메일과 비밀번호를 이용해 `MemberDao.findByEmailAndPassword()`로 회원을 조회한다.
-* [x] 조회한 회원의 식별자를 JWT의 `subject`에 저장한다.
-* [x] 회원 이름을 JWT의 `name` Claim에 저장한다.
-* [x] 회원 권한을 JWT의 `role` Claim에 저장한다.
+* [x] 이메일을 이용해 `MemberDao.findByEmail()`로 회원을 조회한다.
+* [x] 존재하지 않는 이메일인 경우 `LoginAuthenticationException`을 발생시킨다.
+* [x] `PasswordEncoder.matches()`를 이용해 입력 비밀번호와 저장된 비밀번호 해시를 비교한다.
+* [x] 비밀번호가 일치하지 않는 경우 `LoginAuthenticationException`을 발생시킨다.
+* [x] 로그인 성공 시 회원 식별자를 JWT의 `subject`에 저장한다.
+* [x] JWT에는 회원 식별자만 저장하고 이름과 권한 Claim은 저장하지 않는다.
 * [x] Secret Key를 이용해 JWT에 서명한다.
 * [x] 생성된 JWT Access Token을 반환한다.
 
@@ -140,19 +150,52 @@
 * [x] 전달받은 JWT의 서명을 검증한다.
 * [x] JWT의 `subject`에서 회원 식별자를 추출한다.
 * [x] 회원 식별자를 `Long` 타입으로 변환한다.
-* [x] `MemberDao.findById()`를 이용해 로그인 회원을 조회한다.
-* [x] 조회한 `Member` 객체를 반환한다.
+* [x] `MemberDao.findById()`를 이용해 최신 회원 정보를 DB에서 조회한다.
+* [x] JWT 오류, 잘못된 회원 식별자, 존재하지 않는 회원과 같은 인증 실패를 `LoginAuthenticationException`으로 변환한다.
+* [x] DB 장애 등 예상하지 못한 예외를 인증 실패로 변환하지 않도록 구성한다.
+
+---
+
+## `Member`
+
+### 회원 정보 관리 기능
+
+* [x] 회원 식별자, 이름, 이메일, 비밀번호, 권한 정보를 관리한다.
+* [x] DB에서 조회한 회원을 생성할 수 있도록 `id`를 포함한 생성자를 제공한다.
+* [x] 회원가입 전 회원을 생성할 수 있도록 `id`가 없는 생성자를 제공한다.
+* [x] 암호화된 비밀번호를 `password` 필드에 저장할 수 있도록 구성한다.
+* [x] getter 메서드를 통해 회원 정보를 조회할 수 있도록 구성한다.
 
 ---
 
 ## `MemberDao`
 
-### 로그인 회원 조회 기능
+### 회원 저장 기능
 
-* [x] 이메일과 비밀번호를 조건으로 회원 정보를 조회한다.
-* [x] 회원 식별자를 조건으로 회원 정보를 조회하는 `findById()`를 제공한다.
-* [x] 회원 이름을 조건으로 회원 정보를 조회하는 `findByName()`을 제공한다.
-* [x] 조회한 `id`, `name`, `email`, `role` 값을 이용해 `Member` 객체를 생성한다.
+* [x] 회원의 이름, 이메일, 암호화된 비밀번호, 권한을 DB에 저장한다.
+* [x] 저장된 회원의 식별자를 이용해 `Member` 객체를 생성해 반환한다.
+
+### 회원 조회 기능
+
+* [x] 이메일을 조건으로 회원을 조회하는 `findByEmail()`을 제공한다.
+* [x] 회원 식별자를 조건으로 회원을 조회하는 `findById()`를 제공한다.
+* [x] 회원 이름을 조건으로 회원을 조회하는 `findByName()`을 제공한다.
+* [x] 조회한 `id`, `name`, `email`, `password`, `role` 값을 이용해 `Member` 객체를 생성한다.
+* [x] DAO에서 이메일과 비밀번호를 함께 비교하지 않고 회원 조회만 담당하도록 구성한다.
+
+---
+
+## `MemberService`
+
+### 회원가입 기능
+
+* [x] `PasswordEncoder`를 생성자 주입으로 전달받는다.
+* [x] 회원가입 요청으로 전달받은 비밀번호를 `PasswordEncoder.encode()`로 인코딩한다.
+* [x] 암호화된 비밀번호를 이용해 `Member` 객체를 생성한다.
+* [x] 신규 회원의 기본 권한을 `USER`로 설정한다.
+* [x] `MemberDao.save()`를 이용해 회원 정보를 저장한다.
+* [x] 저장된 회원 정보를 `MemberResponse`로 변환해 반환한다.
+* [x] 응답 객체에는 비밀번호를 포함하지 않는다.
 
 ---
 
@@ -217,3 +260,82 @@
 * [x] `USER` 권한 사용자의 관리자 페이지 접근을 차단한다.
 * [x] `ADMIN` 권한 사용자만 관리자 페이지에 접근할 수 있도록 구성한다.
 * [x] 권한이 없는 요청에는 `401 Unauthorized`를 응답한다.
+
+---
+
+## `AdminThemeController`
+
+### 관리자 테마 관리 기능
+
+* [x] 관리자 전용 테마 생성 API를 `/admin/themes` 경로로 분리한다.
+* [x] `POST /admin/themes` 요청을 처리한다.
+* [x] 테마 생성 처리를 `ThemeService`에 위임한다.
+* [x] 테마 생성 성공 시 `201 Created`를 응답한다.
+* [x] `Location` 헤더에 `/admin/themes/{id}` 경로를 담아 응답한다.
+* [x] `DELETE /admin/themes/{id}` 요청을 처리한다.
+* [x] 테마 삭제 처리를 `ThemeService`에 위임한다.
+* [x] 테마 삭제 성공 시 `204 No Content`를 응답한다.
+
+---
+
+## `ThemeController`
+
+### 테마 조회 기능
+
+* [x] 일반 테마 조회 API와 관리자 변경 API를 분리한다.
+* [x] `GET /themes` 요청을 처리한다.
+* [x] 테마 목록 조회를 `ThemeService`에 위임한다.
+* [x] 조회한 테마 목록을 `200 OK`로 응답한다.
+
+---
+
+## `ThemeService`
+
+### 테마 서비스 기능
+
+* [x] 테마 목록 조회를 `ThemeDao`에 위임한다.
+* [x] 테마 저장을 `ThemeDao`에 위임한다.
+* [x] 테마 삭제를 `ThemeDao`에 위임한다.
+* [x] Controller가 `ThemeDao`를 직접 사용하지 않도록 Service 계층을 구성한다.
+
+---
+
+## `AdminTimeController`
+
+### 관리자 예약 시간 관리 기능
+
+* [x] 관리자 전용 시간 생성 API를 `/admin/times` 경로로 분리한다.
+* [x] `POST /admin/times` 요청을 처리한다.
+* [x] 시간 값이 없거나 빈 문자열인 경우 `IllegalArgumentException`을 발생시킨다.
+* [x] 시간 생성 처리를 `TimeService`에 위임한다.
+* [x] 시간 생성 성공 시 `201 Created`를 응답한다.
+* [x] `Location` 헤더에 `/admin/times/{id}` 경로를 담아 응답한다.
+* [x] `DELETE /admin/times/{id}` 요청을 처리한다.
+* [x] 시간 삭제 처리를 `TimeService`에 위임한다.
+* [x] 시간 삭제 성공 시 `204 No Content`를 응답한다.
+
+---
+
+## `TimeController`
+
+### 예약 시간 조회 기능
+
+* [x] 일반 시간 조회 API와 관리자 변경 API를 분리한다.
+* [x] `GET /times` 요청으로 사용 가능한 시간 목록을 조회한다.
+* [x] 시간 목록 조회를 `TimeService`에 위임한다.
+* [x] `GET /available-times` 요청을 처리한다.
+* [x] 날짜와 테마 식별자를 이용해 예약 가능 시간을 조회한다.
+* [x] 예약 가능 시간 조회를 `TimeService`에 위임한다.
+
+---
+
+## `ExceptionController`
+
+### 예외 응답 처리 기능
+
+* [x] `LoginAuthenticationException` 발생 시 `401 Unauthorized`를 응답한다.
+* [x] `IllegalArgumentException` 발생 시 `400 Bad Request`를 응답한다.
+* [x] `NoSuchElementException` 발생 시 `404 Not Found`를 응답한다.
+* [x] 예상하지 못한 예외 발생 시 `500 Internal Server Error`를 응답한다.
+* [x] 모든 예외를 동일한 상태 코드로 처리하지 않고 예외의 성격에 따라 응답 상태를 구분한다.
+
