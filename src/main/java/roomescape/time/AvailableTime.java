@@ -1,9 +1,9 @@
 package roomescape.time;
 
 public class AvailableTime {
-    private Long timeId;
-    private String time;
-    private boolean booked;
+    private final Long timeId;
+    private final String time;
+    private final boolean booked;
 
     public AvailableTime(Long timeId, String time, boolean booked) {
         this.timeId = timeId;

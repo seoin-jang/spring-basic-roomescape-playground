@@ -2,7 +2,7 @@ package roomescape.login;
 
 public class LoginResponse {
 
-    private String name;
+    private final String name;
 
     public LoginResponse(String name) {
         this.name = name;

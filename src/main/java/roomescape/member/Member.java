@@ -3,10 +3,10 @@ package roomescape.member;
 public class Member {
 
     private Long id;
-    private String name;
-    private String email;
-    private String password;
-    private String role;
+    private final String name;
+    private final String email;
+    private final String password;
+    private final String role;
 
     public Member(Long id, String name, String email, String password, String role) {
         this.id = id;

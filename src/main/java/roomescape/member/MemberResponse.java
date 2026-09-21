@@ -1,9 +1,9 @@
 package roomescape.member;
 
 public class MemberResponse {
-    private Long id;
-    private String name;
-    private String email;
+    private final Long id;
+    private final String name;
+    private final String email;
 
     public MemberResponse(Long id, String name, String email) {
         this.id = id;

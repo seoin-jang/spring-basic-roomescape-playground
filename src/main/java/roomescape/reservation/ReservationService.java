@@ -9,7 +9,7 @@ import java.util.List;
 
 @Service
 public class ReservationService {
-    private ReservationDao reservationDao;
+    private final ReservationDao reservationDao;
     private final MemberDao memberDao;
 
     public ReservationService(ReservationDao reservationDao, MemberDao memberDao) {
