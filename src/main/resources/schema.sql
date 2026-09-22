@@ -38,8 +38,18 @@ CREATE TABLE reservation
 );
 
 INSERT INTO member (name, email, password, role)
-VALUES ('어드민', 'admin@email.com', 'password', 'ADMIN'),
-       ('브라운', 'brown@email.com', 'password', 'USER');
+VALUES (
+           '어드민',
+           'admin@email.com',
+           '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG',
+           'ADMIN'
+       ),
+       (
+           '브라운',
+           'brown@email.com',
+           '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG',
+           'USER'
+       );
 
 INSERT INTO theme (name, description)
 VALUES ('테마1', '테마1입니다.'),
