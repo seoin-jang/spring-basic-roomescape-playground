@@ -1,14 +1,40 @@
 package roomescape;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import roomescape.login.LoginAuthenticationException;
+
+import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class ExceptionController {
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Void> handleRuntimeException(Exception e) {
-        e.printStackTrace();
+
+    @ExceptionHandler(LoginAuthenticationException.class)
+    public ResponseEntity<Void> handleAuthenticationException(
+            LoginAuthenticationException e
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Void> handleIllegalArgumentException(
+            IllegalArgumentException e
+    ) {
         return ResponseEntity.badRequest().build();
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Void> handleNoSuchElementException(
+            NoSuchElementException e
+    ) {
+        return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Void> handleException(Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError().build();
     }
 }
