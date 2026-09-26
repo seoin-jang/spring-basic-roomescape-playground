@@ -33,18 +33,6 @@ public class ReservationService {
     }
 
     public ReservationResponse save(ReservationRequest reservationRequest, LoginMember loginMember) {
-        Member member;
-
-        if (reservationRequest.getName() != null) {
-            member = memberRepository
-                    .findByName(reservationRequest.getName())
-                    .orElseThrow(NoSuchElementException::new);
-        }
-        else {
-            member = memberRepository
-                    .findById(loginMember.getId())
-                    .orElseThrow(NoSuchElementException::new);
-        }
 
         Theme theme = themeRepository
                 .findById(reservationRequest.getTheme())
@@ -54,16 +42,62 @@ public class ReservationService {
                 .findById(reservationRequest.getTime())
                 .orElseThrow(NoSuchElementException::new);
 
-        Reservation reservation = new Reservation(member.getName(), reservationRequest.getDate(), time, theme);
+        Reservation reservation;
+
+        if (reservationRequest.getName() != null) {
+            reservation = new Reservation(
+                    null,
+                    reservationRequest.getName(),
+                    reservationRequest.getDate(),
+                    time,
+                    theme
+            );
+        }
+        else {
+            Member member = memberRepository
+                    .findById(loginMember.getId())
+                    .orElseThrow(NoSuchElementException::new);
+
+            reservation = new Reservation(
+                    member,
+                    "",
+                    reservationRequest.getDate(),
+                    time,
+                    theme
+            );
+        }
+
         Reservation savedReservation = reservationRepository.save(reservation);
+        String reservationName;
+
+        if (savedReservation.getMember() != null) {
+            reservationName = savedReservation.getMember().getName();
+        }
+        else {
+            reservationName = savedReservation.getName();
+        }
 
         return new ReservationResponse(
                 savedReservation.getId(),
-                savedReservation.getName(),
+                reservationName,
                 savedReservation.getTheme().getName(),
                 savedReservation.getDate(),
                 savedReservation.getTime().getValue()
         );
+    }
+
+    public List<MyReservationResponse> findMyReservations(LoginMember loginMember) {
+        return reservationRepository
+                .findAllByMemberId(loginMember.getId())
+                .stream()
+                .map(reservation -> new MyReservationResponse(
+                        reservation.getId(),
+                        reservation.getTheme().getName(),
+                        reservation.getDate(),
+                        reservation.getTime().getValue(),
+                        "예약"
+                ))
+                .toList();
     }
 
     public void deleteById(Long id) {
@@ -73,13 +107,24 @@ public class ReservationService {
     public List<ReservationResponse> findAll() {
         return reservationRepository.findAll()
                                     .stream()
-                                    .map(reservation -> new ReservationResponse(
-                                            reservation.getId(),
-                                            reservation.getName(),
-                                            reservation.getTheme().getName(),
-                                            reservation.getDate(),
-                                            reservation.getTime().getValue()
-                                    ))
+                                    .map(reservation -> {
+                                        String reservationName;
+
+                                        if (reservation.getMember() != null) {
+                                            reservationName = reservation.getMember().getName();
+                                        }
+                                        else {
+                                            reservationName = reservation.getName();
+                                        }
+
+                                        return new ReservationResponse(
+                                                reservation.getId(),
+                                                reservationName,
+                                                reservation.getTheme().getName(),
+                                                reservation.getDate(),
+                                                reservation.getTime().getValue()
+                                        );
+                                    })
                                     .toList();
     }
 }
