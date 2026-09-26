@@ -9,7 +9,6 @@ import roomescape.theme.ThemeRepository;
 import roomescape.time.Time;
 import roomescape.time.TimeRepository;
 import roomescape.waiting.WaitingRepository;
-import roomescape.waiting.WaitingWithRank;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -71,10 +70,9 @@ public class ReservationService {
                     time,
                     theme
             );
-        }
-        else {
+        } else {
             Member member = memberRepository
-                    .findById(loginMember.getId())
+                    .findById(loginMember.id())
                     .orElseThrow(NoSuchElementException::new);
 
             reservation = new Reservation(
@@ -91,8 +89,7 @@ public class ReservationService {
 
         if (savedReservation.getMember() != null) {
             reservationName = savedReservation.getMember().getName();
-        }
-        else {
+        } else {
             reservationName = savedReservation.getName();
         }
 
@@ -108,7 +105,7 @@ public class ReservationService {
     public List<MyReservationResponse> findMyReservations(LoginMember loginMember) {
         List<MyReservationResponse> reservations =
                 reservationRepository
-                        .findAllByMemberId(loginMember.getId())
+                        .findAllByMemberId(loginMember.id())
                         .stream()
                         .map(reservation ->
                                 new MyReservationResponse(
@@ -124,7 +121,7 @@ public class ReservationService {
         List<MyReservationResponse> waitings =
                 waitingRepository
                         .findWaitingsWithRankByMemberId(
-                                loginMember.getId()
+                                loginMember.id()
                         )
                         .stream()
                         .map(waitingWithRank -> {
@@ -161,8 +158,7 @@ public class ReservationService {
 
                                         if (reservation.getMember() != null) {
                                             reservationName = reservation.getMember().getName();
-                                        }
-                                        else {
+                                        } else {
                                             reservationName = reservation.getName();
                                         }
 

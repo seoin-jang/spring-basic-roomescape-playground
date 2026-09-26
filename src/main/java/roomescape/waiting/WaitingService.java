@@ -43,7 +43,7 @@ public class WaitingService {
         }
 
         boolean waitingExists = waitingRepository.existsByMemberIdAndDateAndTimeIdAndThemeId(
-                loginMember.getId(),
+                loginMember.id(),
                 request.getDate(),
                 request.getTime(),
                 request.getTheme()
@@ -56,7 +56,7 @@ public class WaitingService {
         Theme theme = themeRepository.findById(request.getTheme()).orElseThrow(NoSuchElementException::new);
         Time time = timeRepository.findById(request.getTime()).orElseThrow(NoSuchElementException::new);
 
-        Waiting waiting = new Waiting(loginMember.getId(), request.getDate(), time, theme);
+        Waiting waiting = new Waiting(loginMember.id(), request.getDate(), time, theme);
 
         Waiting savedWaiting = waitingRepository.save(waiting);
 
@@ -69,7 +69,7 @@ public class WaitingService {
     }
 
     public void delete(Long id, LoginMember loginMember) {
-        Waiting waiting = waitingRepository.findByIdAndMemberId(id, loginMember.getId()).orElseThrow(NoSuchElementException::new);
+        Waiting waiting = waitingRepository.findByIdAndMemberId(id, loginMember.id()).orElseThrow(NoSuchElementException::new);
         waitingRepository.delete(waiting);
     }
 
