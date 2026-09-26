@@ -3,57 +3,83 @@ package roomescape.reservation;
 import org.springframework.stereotype.Service;
 import roomescape.login.LoginMember;
 import roomescape.member.Member;
-import roomescape.member.MemberDao;
+import roomescape.member.MemberRepository;
+import roomescape.theme.Theme;
+import roomescape.theme.ThemeRepository;
+import roomescape.time.Time;
+import roomescape.time.TimeRepository;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class ReservationService {
-    private final ReservationDao reservationDao;
-    private final MemberDao memberDao;
 
-    public ReservationService(ReservationDao reservationDao, MemberDao memberDao) {
-        this.reservationDao = reservationDao;
-        this.memberDao = memberDao;
+    private final ReservationRepository reservationRepository;
+    private final MemberRepository memberRepository;
+    private final ThemeRepository themeRepository;
+    private final TimeRepository timeRepository;
+
+    public ReservationService(
+            ReservationRepository reservationRepository,
+            MemberRepository memberRepository,
+            ThemeRepository themeRepository,
+            TimeRepository timeRepository
+    ) {
+        this.reservationRepository = reservationRepository;
+        this.memberRepository = memberRepository;
+        this.themeRepository = themeRepository;
+        this.timeRepository = timeRepository;
     }
 
     public ReservationResponse save(ReservationRequest reservationRequest, LoginMember loginMember) {
-
         Member member;
 
         if (reservationRequest.getName() != null) {
-            member = memberDao.findByName(reservationRequest.getName());
+            member = memberRepository
+                    .findByName(reservationRequest.getName())
+                    .orElseThrow(NoSuchElementException::new);
         }
-
         else {
-            member = memberDao.findById(loginMember.getId());
+            member = memberRepository
+                    .findById(loginMember.getId())
+                    .orElseThrow(NoSuchElementException::new);
         }
 
-        ReservationRequest request = new ReservationRequest(
-                member.getName(),
-                reservationRequest.getDate(),
-                reservationRequest.getTheme(),
-                reservationRequest.getTime()
-        );
+        Theme theme = themeRepository
+                .findById(reservationRequest.getTheme())
+                .orElseThrow(NoSuchElementException::new);
 
-        Reservation reservation = reservationDao.save(request);
+        Time time = timeRepository
+                .findById(reservationRequest.getTime())
+                .orElseThrow(NoSuchElementException::new);
+
+        Reservation reservation = new Reservation(member.getName(), reservationRequest.getDate(), time, theme);
+        Reservation savedReservation = reservationRepository.save(reservation);
 
         return new ReservationResponse(
-                reservation.getId(),
-                member.getName(),
-                reservation.getTheme().getName(),
-                reservation.getDate(),
-                reservation.getTime().getValue()
+                savedReservation.getId(),
+                savedReservation.getName(),
+                savedReservation.getTheme().getName(),
+                savedReservation.getDate(),
+                savedReservation.getTime().getValue()
         );
     }
 
     public void deleteById(Long id) {
-        reservationDao.deleteById(id);
+        reservationRepository.deleteById(id);
     }
 
     public List<ReservationResponse> findAll() {
-        return reservationDao.findAll().stream()
-                .map(it -> new ReservationResponse(it.getId(), it.getName(), it.getTheme().getName(), it.getDate(), it.getTime().getValue()))
-                .toList();
+        return reservationRepository.findAll()
+                                    .stream()
+                                    .map(reservation -> new ReservationResponse(
+                                            reservation.getId(),
+                                            reservation.getName(),
+                                            reservation.getTheme().getName(),
+                                            reservation.getDate(),
+                                            reservation.getTime().getValue()
+                                    ))
+                                    .toList();
     }
 }
