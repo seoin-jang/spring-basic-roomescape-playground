@@ -1,12 +1,17 @@
 package roomescape.reservation;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class MyReservationResponse {
 
-    private final Long reservationId;
-    private final String theme;
-    private final String date;
-    private final String time;
-    private final String status;
+    private Long reservationId;
+    private String theme;
+    private String date;
+    private String time;
+    private String status;
+
+    public MyReservationResponse() {
+    }
 
     public MyReservationResponse(Long reservationId, String theme, String date, String time, String status) {
         this.reservationId = reservationId;
@@ -17,6 +22,11 @@ public class MyReservationResponse {
     }
 
     public Long getReservationId() {
+        return reservationId;
+    }
+
+    @JsonIgnore
+    public long getId() {
         return reservationId;
     }
 
