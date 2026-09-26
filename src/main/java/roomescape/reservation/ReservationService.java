@@ -8,6 +8,8 @@ import roomescape.theme.Theme;
 import roomescape.theme.ThemeRepository;
 import roomescape.time.Time;
 import roomescape.time.TimeRepository;
+import roomescape.waiting.WaitingRepository;
+import roomescape.waiting.WaitingWithRank;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -19,20 +21,37 @@ public class ReservationService {
     private final MemberRepository memberRepository;
     private final ThemeRepository themeRepository;
     private final TimeRepository timeRepository;
+    private final WaitingRepository waitingRepository;
 
     public ReservationService(
             ReservationRepository reservationRepository,
             MemberRepository memberRepository,
             ThemeRepository themeRepository,
-            TimeRepository timeRepository
+            TimeRepository timeRepository,
+            WaitingRepository waitingRepository
     ) {
         this.reservationRepository = reservationRepository;
         this.memberRepository = memberRepository;
         this.themeRepository = themeRepository;
         this.timeRepository = timeRepository;
+        this.waitingRepository = waitingRepository;
     }
 
     public ReservationResponse save(ReservationRequest reservationRequest, LoginMember loginMember) {
+
+        boolean exists =
+                reservationRepository
+                        .existsByDateAndTimeIdAndThemeId(
+                                reservationRequest.getDate(),
+                                reservationRequest.getTime(),
+                                reservationRequest.getTheme()
+                        );
+
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "이미 예약된 시간입니다."
+            );
+        }
 
         Theme theme = themeRepository
                 .findById(reservationRequest.getTheme())
@@ -87,16 +106,46 @@ public class ReservationService {
     }
 
     public List<MyReservationResponse> findMyReservations(LoginMember loginMember) {
-        return reservationRepository
-                .findAllByMemberId(loginMember.getId())
-                .stream()
-                .map(reservation -> new MyReservationResponse(
-                        reservation.getId(),
-                        reservation.getTheme().getName(),
-                        reservation.getDate(),
-                        reservation.getTime().getValue(),
-                        "예약"
-                ))
+        List<MyReservationResponse> reservations =
+                reservationRepository
+                        .findAllByMemberId(loginMember.getId())
+                        .stream()
+                        .map(reservation ->
+                                new MyReservationResponse(
+                                        reservation.getId(),
+                                        reservation.getTheme().getName(),
+                                        reservation.getDate(),
+                                        reservation.getTime().getValue(),
+                                        "예약"
+                                )
+                        )
+                        .toList();
+
+        List<MyReservationResponse> waitings =
+                waitingRepository
+                        .findWaitingsWithRankByMemberId(
+                                loginMember.getId()
+                        )
+                        .stream()
+                        .map(waitingWithRank -> {
+                            var waiting = waitingWithRank.getWaiting();
+                            long rank = waitingWithRank.getRank() + 1;
+
+                            return new MyReservationResponse(
+                                    waiting.getId(),
+                                    waiting.getTheme().getName(),
+                                    waiting.getDate(),
+                                    waiting.getTime().getValue(),
+                                    rank + "번째 예약대기"
+                            );
+                        })
+                        .toList();
+
+        return java.util.stream.Stream
+                .concat(
+                        reservations.stream(),
+                        waitings.stream()
+                )
                 .toList();
     }
 
